@@ -1,10 +1,11 @@
---  PIM CONSIGAZ - Script do banco de dados
-DROP DATABASE IF EXISTS pim_consigaz;
+--  PIM CONSIGAZ - banco de dados
 CREATE DATABASE pim_consigaz;
-USE pimprodutos_consigaz;
+USE pim_consigaz;
 
 --  2. CRIAÇÃO DAS TABELAS
+
 --  2.1 Usuários (funcionários do sistema)
+
 CREATE TABLE usuarios (
     id_usuario  INT AUTO_INCREMENT PRIMARY KEY,
     nome        VARCHAR(100) NOT NULL,
@@ -19,7 +20,10 @@ CREATE TABLE usuarios (
     ativo       BOOLEAN      NOT NULL DEFAULT TRUE
 );
 
+SELECT * FROM usuarios;
+
 --  2.2 Clientes
+
 CREATE TABLE clientes (
     id_cliente  INT AUTO_INCREMENT PRIMARY KEY,
     nome        VARCHAR(100) NOT NULL,
@@ -31,6 +35,7 @@ CREATE TABLE clientes (
 );
 
 --  2.3 Produtos (botijões de gás)
+
 CREATE TABLE produtos (
     id_produto  INT AUTO_INCREMENT PRIMARY KEY,
     tipo        ENUM('P13', 'P20', 'P45') NOT NULL UNIQUE,
@@ -46,7 +51,8 @@ CREATE TABLE estoque (
     id_produto  INT NOT NULL UNIQUE,
     quantidade  INT NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (id_produto) REFERENCES produtos(id_produto),
+    FOREIGN KEY (id_produto) 
+    REFERENCES produtos(id_produto),
 
     CHECK (quantidade >= 0)
 );
@@ -77,8 +83,10 @@ CREATE TABLE pedidos (
     endereco_entrega  VARCHAR(200)  NOT NULL,
     valor_total       DECIMAL(10,2) NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente),
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+    FOREIGN KEY (id_cliente) 
+    REFERENCES clientes(id_cliente),
+    FOREIGN KEY (id_usuario) 
+    REFERENCES usuarios(id_usuario)
 );
 
 --  2.6 Itens do pedido
@@ -91,8 +99,10 @@ CREATE TABLE itens_pedido (
     quantidade      INT           NOT NULL,
     preco_unitario  DECIMAL(10,2) NOT NULL,
 
-    FOREIGN KEY (id_pedido)  REFERENCES pedidos(id_pedido),
-    FOREIGN KEY (id_produto) REFERENCES produtos(id_produto),
+    FOREIGN KEY (id_pedido)  
+    REFERENCES pedidos(id_pedido),
+    FOREIGN KEY (id_produto) 
+    REFERENCES produtos(id_produto),
 
     CHECK (quantidade > 0),
     CHECK (preco_unitario >= 0)
@@ -113,17 +123,17 @@ CREATE TABLE entregas (
     data_saida     DATETIME NULL,
     data_entrega   DATETIME NULL,
 
-    FOREIGN KEY (id_pedido)     REFERENCES pedidos(id_pedido),
-    FOREIGN KEY (id_entregador) REFERENCES usuarios(id_usuario)
+    FOREIGN KEY (id_pedido)     
+    REFERENCES pedidos(id_pedido),
+    FOREIGN KEY (id_entregador) 
+    REFERENCES usuarios(id_usuario)
 );
 
 --  2.8 Movimentações do estoque
 CREATE TABLE movimentacoes_estoque (
     id_movimentacao    INT AUTO_INCREMENT PRIMARY KEY,
-
     id_produto         INT NOT NULL,
     id_usuario         INT NULL,
-
     tipo               ENUM(
                            'ENTRADA',
                            'SAIDA',
@@ -133,16 +143,15 @@ CREATE TABLE movimentacoes_estoque (
     quantidade         INT NOT NULL,
     data_movimentacao  DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (id_produto) REFERENCES produtos(id_produto),
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
+    FOREIGN KEY (id_produto) 
+    REFERENCES produtos(id_produto),
+    FOREIGN KEY (id_usuario) 
+    REFERENCES usuarios(id_usuario),
 
     CHECK (quantidade > 0)
 );
 
-SHOW TABLES;
-
 --  3. DADOS INICIAIS
-
 --  3.1 Usuários
 INSERT INTO usuarios (nome, login, senha, nivel)
 VALUES
@@ -181,6 +190,21 @@ VALUES
     ('P13', 100.00),
     ('P20', 150.00),
     ('P45', 300.00);
+    
+    
+UPDATE produtos
+set preco = 110.00
+where tipo = 'P13';
+
+UPDATE produtos
+set preco = 250.00
+where tipo = 'P20';
+
+UPDATE produtos
+set preco = 450.00
+where tipo = 'P45';
+
+SELECT * FROM produtos;
 
 --  3.4 Estoque inicial
 INSERT INTO estoque (id_produto, quantidade)
@@ -194,19 +218,31 @@ VALUES
 INSERT INTO pedidos (id_cliente, forma_pagamento, endereco_entrega)
 VALUES (1, 'PIX', 'Rua das Flores, 100 - Taubaté - SP');
 
+INSERT INTO pedidos (id_cliente, forma_pagamento, endereco_entrega)
+VALUES (1, 'DEBITO', 'Avenida Brasil, 200 - São José dos Campos - SP');
+
+SELECT * FROM pedidos;
+
 -- 4.2 Adicionar produto ao pedido
+
 INSERT INTO itens_pedido (id_pedido, id_produto, quantidade, preco_unitario)
 VALUES (1, 1, 1, 100.00);
 
 -- 4.3 Atualizar o valor total do pedido
 UPDATE pedidos
-SET valor_total = 100.00
+SET valor_total = (
+    SELECT SUM(quantidade * preco_unitario)
+    FROM itens_pedido
+    WHERE id_pedido = 1
+)
 WHERE id_pedido = 1;
 
 -- 4.4 Atualizar o estoque após a venda
 UPDATE estoque
 SET quantidade = quantidade - 1
-WHERE id_produto = 1;
+WHERE id_produto = 1
+AND quantidade >= 1;
+
 
 -- 4.5 Registrar a movimentação de estoque (saída por venda)
 INSERT INTO movimentacoes_estoque (id_produto, id_usuario, tipo, quantidade)
