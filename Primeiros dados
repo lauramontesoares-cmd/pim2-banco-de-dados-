@@ -1,0 +1,160 @@
+-- ============================================================
+-- DADOS INICIAIS
+-- ============================================================
+
+
+-- 1. INSERIR USUÁRIOS
+INSERT INTO usuarios
+(nome, login, senha, nivel)
+VALUES
+('Administrador', 'admin', '1234', 'ADMINISTRADOR'),
+('Atendente', 'atendente', '1234', 'ATENDENTE'),
+('Entregador', 'entregador', '1234', 'ENTREGADOR');
+
+
+-- 2. INSERIR CLIENTES
+INSERT INTO clientes
+(nome, login, senha, telefone, endereco)
+VALUES
+(
+    'João da Silva',
+    'joao',
+    '1234',
+    '(12) 99999-1111',
+    'Rua das Flores, 100 - Taubaté - SP'
+),
+(
+    'Maria Oliveira',
+    'maria',
+    '1234',
+    '(12) 98888-2222',
+    'Avenida Brasil, 200 - Taubaté - SP'
+);
+
+
+-- 3. INSERIR PRODUTOS
+INSERT INTO produtos
+(tipo, preco)
+VALUES
+('P13', 100.00),
+('P20', 150.00),
+('P45', 300.00);
+
+
+-- 4. INSERIR ESTOQUE INICIAL
+INSERT INTO estoque
+(id_produto, quantidade)
+VALUES
+(1, 50),
+(2, 30),
+(3, 20);
+
+
+-- ============================================================
+-- TESTE DE PEDIDO
+-- ============================================================
+
+
+-- 5. CRIAR PEDIDO
+INSERT INTO pedidos
+(
+    id_cliente,
+    forma_pagamento,
+    endereco_entrega
+)
+VALUES
+(
+    1,
+    'PIX',
+    'Rua das Flores, 100 - Taubaté - SP'
+);
+
+
+-- 6. ADICIONAR PRODUTO AO PEDIDO
+INSERT INTO itens_pedido
+(
+    id_pedido,
+    id_produto,
+    quantidade,
+    preco_unitario
+)
+VALUES
+(
+    1,
+    1,
+    1,
+    100.00
+);
+
+
+-- 7. ATUALIZAR O VALOR DO PEDIDO
+UPDATE pedidos
+SET valor_total = 100.00
+WHERE id_pedido = 1;
+
+
+-- 8. ATUALIZAR O ESTOQUE APÓS A VENDA
+UPDATE estoque
+SET quantidade = quantidade - 1
+WHERE id_produto = 1;
+
+
+-- ============================================================
+-- TESTE DA ENTREGA
+-- ============================================================
+
+
+-- 9. CRIAR ENTREGA
+INSERT INTO entregas
+(
+    id_pedido,
+    id_entregador
+)
+VALUES
+(
+    1,
+    3
+);
+
+
+-- 10. COLOCAR ENTREGA EM ROTA
+UPDATE entregas
+SET
+    status = 'EM_ROTA',
+    data_saida = CURRENT_TIMESTAMP
+WHERE id_entrega = 1;
+
+
+-- 11. MARCAR ENTREGA COMO ENTREGUE
+UPDATE entregas
+SET
+    status = 'ENTREGUE',
+    data_entrega = CURRENT_TIMESTAMP
+WHERE id_entrega = 1;
+
+
+-- 12. ATUALIZAR STATUS DO PEDIDO
+UPDATE pedidos
+SET status = 'ENTREGUE'
+WHERE id_pedido = 1;
+
+
+-- ============================================================
+-- CONSULTAS PARA CONFERIR OS RESULTADOS
+-- ============================================================
+
+SELECT * FROM usuarios;
+
+SELECT * FROM clientes;
+
+SELECT * FROM produtos;
+
+SELECT * FROM estoque;
+
+SELECT * FROM pedidos;
+
+SELECT * FROM itens_pedido;
+
+SELECT * FROM entregas;
+
+SELECT * FROM movimentacoes_estoque;
