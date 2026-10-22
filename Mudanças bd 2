@@ -1,0 +1,85 @@
+
+```sql
+UPDATE pedidos
+SET valor_total = 100.00
+WHERE id_pedido = 1;
+```
+
+Ele atualiza o valor total do pedido de ID 1 para R$ 100,00. Porém, o valor está fixo no código.
+
+O ideal é calcular o total com base nos produtos e nas quantidades cadastradas em `itens_pedido`.
+
+Substituição do trecho anterior por este:
+
+```sql
+UPDATE pedidos
+SET valor_total = (
+    SELECT SUM(quantidade * preco_unitario)
+    FROM itens_pedido
+    WHERE id_pedido = 1
+)
+WHERE id_pedido = 1;
+```
+
+O que mudou?
+
+* `SELECT SUM(...)` soma os valores de todos os itens do pedido.
+
+* `quantidade * preco_unitario` calcula o subtotal de cada item.
+
+* `WHERE id_pedido = 1` considera somente os itens daquele pedido.
+
+* `UPDATE pedidos` grava o resultado no campo `valor_total`.
+
+Por exemplo, se o pedido tiver dois botijões P13 de R$ 100,00 e um P20 de R$ 150,00, o total será de R$ 350,00.
+
+Esse cálculo considera que o pedido já possui seus itens cadastrados.
+
+Baixa do estoque após a venda:
+
+Na seção 4.4 — Atualizar o estoque após a venda, você tem:
+
+```sql
+UPDATE estoque
+SET quantidade = quantidade - 1
+WHERE id_produto = 1;
+```
+
+Esse comando retira uma unidade do estoque do produto de ID 1. Como o P13 começa com 50 unidades, após a venda ficará com 49.
+
+Entretanto, falta uma proteção para impedir que o estoque fique negativo. Substitua pelo seguinte código:
+
+```sql
+UPDATE estoque
+SET quantidade = quantidade - 1
+WHERE id_produto = 1
+AND quantidade >= 1;
+```
+
+A condição `AND quantidade >= 1` garante que a baixa só seja realizada se houver pelo menos uma unidade disponível.
+
+Por exemplo:
+
+| Estoque antes | Quantidade vendida | Estoque depois |
+| ------------- | ------------------ | -------------- |
+| 50            | 1                  | 49             |
+| 10            | 1                  | 9              |
+| 1             | 1                  | 0              |
+| 0             | 1                  | 0              |
+
+Importante: se não houver estoque, o comando não altera nenhuma linha. O programa em C também deverá verificar essa situação e informar que o produto está indisponível.
+
+Registro da movimentação de estoque
+
+Seção 4.5 — Registrar a movimentação de estoque:
+
+```sql
+INSERT INTO movimentacoes_estoque
+    (id_produto, id_usuario, tipo, quantidade)
+VALUES
+    (1, 2, 'SAIDA', 1);
+```
+
+Esse trecho registra a saída de uma unidade do produto de ID 1, realizada pelo usuário de ID 2.
+
+A tabela `movimentacoes_estoque` funciona como um histórico: ela permite consultar quando houve entrada, saída ou devolução de produtos.
